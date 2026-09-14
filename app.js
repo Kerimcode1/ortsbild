@@ -172,20 +172,29 @@ var ROUTES = [
 ];
 
 function currentRoute(){
-  var h = (location.hash || '#/').replace(/^#\/?/,'');
-  return h.split('?')[0];
+  return location.pathname.replace(/^\/+/,'').replace(/\/+$/,'');
 }
 function queryOf(){
-  var h = location.hash || '';
-  var i = h.indexOf('?');
-  if(i < 0) return {};
+  var s = location.search || '';
+  if(s.charAt(0) === '?') s = s.slice(1);
+  if(!s) return {};
   var out = {};
-  h.slice(i+1).split('&').forEach(function(p){
+  s.split('&').forEach(function(p){
     if(!p) return;
     var kv = p.split('=');
     out[decodeURIComponent(kv[0])] = decodeURIComponent((kv[1]||'').replace(/\+/g,' '));
   });
   return out;
+}
+function navigateTo(path){
+  if(location.pathname + location.search === path) return;
+  history.pushState(null, '', path);
+  render();
+}
+function isInternalLink(a){
+  if(!a || a.target === '_blank') return false;
+  var href = a.getAttribute('href');
+  return !!href && href.charAt(0) === '/' && href.charAt(1) !== '/';
 }
 
 /* ============================================================
@@ -244,14 +253,14 @@ function seed(){
 function header(){
   var r = currentRoute();
   var links = ROUTES.map(function(x){
-    return '<a href="#/'+x[0]+'" class="'+(r === x[0] ? 'on' : '')+'">'+esc(x[1])+'</a>';
+    return '<a href="/'+x[0]+'" class="'+(r === x[0] ? 'on' : '')+'">'+esc(x[1])+'</a>';
   }).join('');
   return ''
   + '<header class="site-head" id="siteHead"><div class="wrap head-in">'
-  +   '<a href="#/" class="brand">'+logoMark()+'<span class="brand-txt">ORTS<em>BILD</em></span></a>'
+  +   '<a href="/" class="brand">'+logoMark()+'<span class="brand-txt">ORTS<em>BILD</em></span></a>'
   +   '<nav class="nav-main">'+links+'</nav>'
   +   '<div class="head-cta">'
-  +     '<a href="#/kontakt" class="btn btn-glow btn-sm">Erstgespräch <span class="arr">&rarr;</span></a>'
+  +     '<a href="/kontakt" class="btn btn-glow btn-sm">Erstgespräch <span class="arr">&rarr;</span></a>'
   +     '<button class="burger" id="burger" aria-label="Menü öffnen">'
   +       '<svg width="18" height="12" viewBox="0 0 18 12" fill="none"><path d="M0 1h18M0 6h18M0 11h18" stroke="currentColor" stroke-width="1.4"/></svg>'
   +     '</button>'
@@ -267,8 +276,8 @@ function header(){
   +   '<nav>'+links+'</nav>'
   +   '<div class="drawer-foot">'
   +     '<a href="tel:'+AGENTUR.telRaw+'" class="btn btn-glow">'+esc(AGENTUR.tel)+' anrufen</a>'
-  +     '<a href="#/kontakt" class="btn btn-ghost">Kostenloses Erstgespräch</a>'
-  +     '<a href="#/dashboard" class="btn btn-ghost">Agentur-Login</a>'
+  +     '<a href="/kontakt" class="btn btn-ghost">Kostenloses Erstgespräch</a>'
+  +     '<a href="/dashboard" class="btn btn-ghost" rel="nofollow">Agentur-Login</a>'
   +   '</div>'
   + '</div>';
 }
@@ -282,11 +291,11 @@ function footer(){
   +       '<p style="max-width:34ch">Websites für Betriebe, die man kennen sollte. Aus Innsbruck, für Österreich, Deutschland und die Schweiz.</p>'
   +     '</div>'
   +     '<div><h5>Seiten</h5>'
-  +       ROUTES.map(function(x){ return '<a href="#/'+x[0]+'">'+esc(x[1])+'</a>'; }).join('')
+  +       ROUTES.map(function(x){ return '<a href="/'+x[0]+'">'+esc(x[1])+'</a>'; }).join('')
   +     '</div>'
   +     '<div><h5>Rechtliches</h5>'
-  +       '<a href="#/impressum">Impressum</a><a href="#/datenschutz">Datenschutz</a><a href="#/agb">AGB</a>'
-  +       '<a href="#/dashboard">Agentur-Login</a>'
+  +       '<a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a><a href="/agb">AGB</a>'
+  +       '<a href="/dashboard" rel="nofollow">Agentur-Login</a>'
   +     '</div>'
   +     '<div><h5>Kontakt</h5>'
   +       '<a href="tel:'+AGENTUR.telRaw+'">'+esc(AGENTUR.tel)+'</a>'
@@ -327,8 +336,8 @@ function pageHome(){
   +     '<h1 class="h-xl">Gut zu sein reicht nicht.<br>Man muss Sie auch <span class="lit">finden</span>.</h1>'
   +     '<p class="lede">Wir bauen Websites für Handwerksbetriebe, Praxen und Studios — mit Terminbuchung, Anfragen-Verwaltung und allem, was im Alltag wirklich gebraucht wird. Festpreis, in 7 bis 10 Werktagen fertig.</p>'
   +     '<div class="hero-cta">'
-  +       '<a href="#/kontakt" class="btn btn-glow">Kostenloses Erstgespräch <span class="arr">&rarr;</span></a>'
-  +       '<a href="#/referenzen" class="btn btn-ghost">Branchenbeispiele ansehen</a>'
+  +       '<a href="/kontakt" class="btn btn-glow">Kostenloses Erstgespräch <span class="arr">&rarr;</span></a>'
+  +       '<a href="/referenzen" class="btn btn-ghost">Branchenbeispiele ansehen</a>'
   +     '</div>'
   +   '</div>'
   + '</section>'
@@ -368,7 +377,7 @@ function pageHome(){
               + '<ul>'+s.li.map(function(l){ return '<li>'+esc(l)+'</li>'; }).join('')+'</ul></div>';
           }).join('')
   +     '</div>'
-  +     '<div style="margin-top:30px"><a href="#/leistungen" class="btn btn-ghost">Alle Leistungen im Detail <span class="arr">&rarr;</span></a></div>'
+  +     '<div style="margin-top:30px"><a href="/leistungen" class="btn btn-ghost">Alle Leistungen im Detail <span class="arr">&rarr;</span></a></div>'
   +   '</div>'
   + '</section>'
 
@@ -409,7 +418,7 @@ function pageHome(){
                return '<span class="trust-chip">'+check()+esc(t)+'</span>';
              }).join('')
   +         '</div>'
-  +         '<div style="margin-top:26px"><a href="#/kontakt?paket=Live-Demo" class="btn btn-glow">Live-Demo zeigen lassen <span class="arr">&rarr;</span></a></div>'
+  +         '<div style="margin-top:26px"><a href="/kontakt?paket=Live-Demo" class="btn btn-glow">Live-Demo zeigen lassen <span class="arr">&rarr;</span></a></div>'
   +       '</div>'
   +       '<div class="soft-shell rv">'
   +         '<div class="soft-bar"><i></i><i></i><i></i><span class="url">ihrbetrieb.at/dashboard</span></div>'
@@ -499,7 +508,8 @@ function pageHome(){
 
 function refCard(r){
   return '<article class="ref rv">'
-    + '<div class="ref-img" style="background-image:url(\''+r.img+'\')">'
+    + '<div class="ref-img">'
+    +   '<img src="/'+r.img+'" alt="'+esc(r.name+' — '+r.branche)+'" loading="lazy" width="640" height="400">'
     +   '<span class="ref-chip" style="background:'+r.accent+'">Branchenbeispiel</span>'
     + '</div>'
     + '<div class="ref-body">'
@@ -520,7 +530,7 @@ function tierCard(t){
     + '<p class="who">'+esc(t.who)+'</p>'
     + '<div class="amt">ab '+esc(t.ab)+' &euro;<small>einmalig, netto · Festpreis laut Angebot</small></div>'
     + '<ul>'+t.li.map(function(l){ return '<li>'+check()+'<span>'+esc(l)+'</span></li>'; }).join('')+'</ul>'
-    + '<a class="btn '+(t.feature?'btn-glow':'btn-ink')+'" href="#/kontakt?paket='+encodeURIComponent(t.name)+'">'+esc(t.name)+'-Paket anfragen</a>'
+    + '<a class="btn '+(t.feature?'btn-glow':'btn-ink')+'" href="/kontakt?paket='+encodeURIComponent(t.name)+'">'+esc(t.name)+'-Paket anfragen</a>'
     + '</div>';
 }
 
@@ -528,7 +538,7 @@ function addonBox(){
   return '<div class="addon rv">'
     + '<div><b>Wartung & Betreuung — 49 bis 89 &euro; pro Monat</b>'
     + '<p>Hosting, Sicherheitsupdates, Änderungen an Texten und Bildern, technischer Support. Optional zu beiden Paketen, jederzeit monatlich kündbar.</p></div>'
-    + '<a href="#/kontakt?paket=Wartung" class="btn btn-ghost btn-sm">Anfragen</a>'
+    + '<a href="/kontakt?paket=Wartung" class="btn btn-ghost btn-sm">Anfragen</a>'
     + '</div>';
 }
 
@@ -539,7 +549,7 @@ function ctaBand(){
     +   '<h2 class="h-lg rv">15 Minuten am Telefon.<br>Danach wissen Sie, ob es passt.</h2>'
     +   '<p class="lede rv" style="margin:18px auto 0">Kein Verkaufsgespräch mit Vertrag am Ende. Wir hören uns an, was Sie machen, und sagen Ihnen ehrlich, ob und wie sich eine Website für Sie rechnet.</p>'
     +   '<div class="rv" style="margin-top:30px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">'
-    +     '<a href="#/kontakt" class="btn btn-glow">Erstgespräch vereinbaren <span class="arr">&rarr;</span></a>'
+    +     '<a href="/kontakt" class="btn btn-glow">Erstgespräch vereinbaren <span class="arr">&rarr;</span></a>'
     +     '<a href="tel:'+AGENTUR.telRaw+'" class="btn btn-ghost">'+esc(AGENTUR.tel)+'</a>'
     +   '</div>'
     + '</div></section>';
@@ -569,7 +579,7 @@ function pageLeistungen(){
   +   '</div>'
   + '</section>'
   + '<section class="band band-dark band-pad"><div class="wrap"><div class="split">'
-  +   '<div class="split-img rv" style="background-image:url(\'img/studio.jpg\')"></div>'
+  +   '<div class="split-img rv" style="background-image:url(\'/img/studio.jpg\')"></div>'
   +   '<div class="rv"><div class="eyebrow">Was wir nicht machen</div>'
   +   '<h2 class="h-md">Ehrlichkeit spart allen Zeit.</h2>'
   +   '<p class="lede" style="margin-top:16px">Wir bauen keine Onlineshops mit hunderten Artikeln, keine Buchungsplattformen für ganze Ketten und keine Apps. Wenn Sie so etwas brauchen, sagen wir Ihnen das im Erstgespräch — und meistens kennen wir jemanden, der das besser kann.</p>'
@@ -624,7 +634,7 @@ function pageAblauf(){
             return '<span class="trust-chip">'+check()+esc(t)+'</span>'; }).join('')
   +     '</div>'
   +   '</div>'
-  +   '<div class="split-img rv" style="background-image:url(\'img/desk.jpg\')"></div>'
+  +   '<div class="split-img rv" style="background-image:url(\'/img/desk.jpg\')"></div>'
   + '</div></div></section>'
   + ctaBand();
 }
@@ -656,7 +666,7 @@ function pageUeber(){
   return subHead('Über uns','Zwei Leute aus Innsbruck, die Betriebe sichtbar machen.',
       'Wir sind keine Agentur mit vierzig Mitarbeitern und drei Standorten. Sie reden direkt mit den Leuten, die Ihre Seite auch bauen.')
   + '<section class="band band-light band-pad"><div class="wrap"><div class="split">'
-  +   '<div class="split-img rv" style="background-image:url(\'img/innsbruck.jpg\')"></div>'
+  +   '<div class="split-img rv" style="background-image:url(\'/img/innsbruck.jpg\')"></div>'
   +   '<div class="rv">'
   +     '<div class="eyebrow">Standort</div>'
   +     '<h2 class="h-md">Innsbruck — und der Rest des DACH-Raums.</h2>'
@@ -707,14 +717,14 @@ function pageKontakt(){
   +         '<div class="full"><label for="kTxt">Ihre Nachricht</label><textarea id="kTxt" name="txt" placeholder="Was machen Sie, und was soll die Website können?"></textarea></div>'
   +         '<div class="full">'
   +           '<button class="btn btn-glow" type="submit">Anfrage senden <span class="arr">&rarr;</span></button>'
-  +           '<p class="form-note">Mit dem Absenden stimmen Sie zu, dass wir Ihre Angaben zur Bearbeitung der Anfrage speichern. Details in der <a href="#/datenschutz" style="color:var(--glow-2);text-decoration:underline">Datenschutzerklärung</a>.</p>'
+  +           '<p class="form-note">Mit dem Absenden stimmen Sie zu, dass wir Ihre Angaben zur Bearbeitung der Anfrage speichern. Details in der <a href="/datenschutz" style="color:var(--glow-2);text-decoration:underline">Datenschutzerklärung</a>.</p>'
   +         '</div>'
   +       '</div>'
   +     '</form>'
   +     '<div id="kontaktOK" hidden class="msg-ok"></div>'
   +   '</div>'
   +   '<div class="rv">'
-  +     '<div class="split-img" style="background-image:url(\'img/ridge-clouds.jpg\');aspect-ratio:4/3;margin-bottom:24px"></div>'
+  +     '<div class="split-img" style="background-image:url(\'/img/ridge-clouds.jpg\');aspect-ratio:4/3;margin-bottom:24px"></div>'
   +     '<h3 class="h-sm" style="color:var(--ink)">Direkt erreichbar</h3>'
   +     '<p style="margin-top:12px;font-family:var(--f-display);font-weight:800;font-size:clamp(21px,2.6vw,27px);letter-spacing:-.02em;line-height:1.2">'
   +       '<a href="tel:'+AGENTUR.telRaw+'" style="color:var(--ink);border-bottom:2px solid var(--glow-2)">'+esc(AGENTUR.tel)+'</a>'
@@ -1481,7 +1491,7 @@ function bindDash(){
     }
     else if(act === 'logout'){
       sessionStorage.removeItem('ortsbild:auth');
-      location.hash = '#/';
+      navigateTo('/');
     }
     else if(act === 'export'){ exportJson(); }
   });
@@ -1597,6 +1607,47 @@ function pageFor(route){
 
 var gsapReady = false;
 
+var ROUTE_META = {
+  '':            { title:'ORTSBILD — Websites für Handwerksbetriebe, Praxen und Studios', desc:'ORTSBILD baut Websites für Handwerksbetriebe, Praxen und Studios in Österreich, Deutschland und der Schweiz — mit Terminbuchung, Anfragen-Verwaltung und Kundenbereich. Festpreis, in 7 bis 10 Werktagen fertig.' },
+  'leistungen':  { title:'Leistungen — ORTSBILD', desc:'Website, Terminbuchung, Kundenbereich, Domain und Hosting, Rechtstexte — alles aus einer Hand, zum Festpreis.' },
+  'referenzen':  { title:'Referenzen — ORTSBILD', desc:'Drei Branchenbeispiele: Handwerk, Kosmetik & Med-Spa, Zahnarzt- und Gesundheitspraxen — vollständig gebaute Systeme samt Kundenbereich.' },
+  'ablauf':      { title:'Ablauf — ORTSBILD', desc:'Vom Erstgespräch bis zur fertigen Website in 7 bis 10 Werktagen — sieben Schritte, Sie tun davon zwei.' },
+  'preise':      { title:'Preise — ORTSBILD', desc:'Zwei Pakete, ein Festpreis: Basis ab 3.800 €, Plus ab 6.000 €. Keine Stundenabrechnung, keine versteckten Kosten.' },
+  'ueber-uns':   { title:'Über uns — ORTSBILD', desc:'ORTSBILD aus Innsbruck baut Websites für lokale Betriebe in Österreich, Deutschland und der Schweiz.' },
+  'kontakt':     { title:'Kontakt — ORTSBILD', desc:'Kostenloses Erstgespräch vereinbaren — wir melden uns innerhalb von 24 Stunden.' },
+  'impressum':   { title:'Impressum — ORTSBILD', desc:'Impressum von ORTSBILD, Innsbruck.' },
+  'datenschutz': { title:'Datenschutzerklärung — ORTSBILD', desc:'Datenschutzerklärung von ORTSBILD gemäß DSGVO.' },
+  'agb':         { title:'AGB — ORTSBILD', desc:'Allgemeine Geschäftsbedingungen von ORTSBILD.' },
+  'dashboard':   { title:'Agentur-Login — ORTSBILD', desc:'Interner Bereich von ORTSBILD.' }
+};
+
+function metaTag(sel, attr, create){
+  var el = document.querySelector(sel);
+  if(!el){ el = document.createElement(create.tag); Object.keys(create.attrs).forEach(function(k){ el.setAttribute(k, create.attrs[k]); }); document.head.appendChild(el); }
+  return el;
+}
+function setMeta(route){
+  var m = ROUTE_META[route] || ROUTE_META[''];
+  document.title = m.title;
+  metaTag('meta[name="description"]', 'content', {tag:'meta', attrs:{name:'description'}}).setAttribute('content', m.desc);
+  metaTag('link[rel="canonical"]', 'href', {tag:'link', attrs:{rel:'canonical'}}).setAttribute('href', 'https://ortsbild.com/' + route);
+  metaTag('meta[name="robots"]', 'content', {tag:'meta', attrs:{name:'robots'}}).setAttribute('content', route === 'dashboard' ? 'noindex,nofollow' : 'index,follow');
+}
+function injectLocalBusinessSchema(){
+  if(document.getElementById('ldjson-localbusiness')) return;
+  var data = {
+    '@context':'https://schema.org', '@type':'ProfessionalService',
+    name:AGENTUR.name, founder:AGENTUR.inhaber, email:AGENTUR.mail, telephone:AGENTUR.telRaw,
+    url:'https://ortsbild.com/',
+    address:{ '@type':'PostalAddress', streetAddress:AGENTUR.strasse, postalCode:AGENTUR.plz, addressLocality:AGENTUR.ort, addressCountry:'AT' },
+    areaServed:['AT','DE','CH'],
+    description:'ORTSBILD baut Websites für Handwerksbetriebe, Praxen und Studios in Österreich, Deutschland und der Schweiz.'
+  };
+  var s = document.createElement('script');
+  s.type = 'application/ld+json'; s.id = 'ldjson-localbusiness'; s.text = JSON.stringify(data);
+  document.head.appendChild(s);
+}
+
 function render(){
   var route = currentRoute();
   var isDash = route === 'dashboard';
@@ -1606,6 +1657,7 @@ function render(){
     + '<main id="main">' + pageFor(route) + '</main>'
     + (isDash ? '' : footer());
 
+  setMeta(route);
   bindChrome();
 
   if(isDash){ bindGate(); bindDash(); }
@@ -1626,6 +1678,19 @@ function render(){
       window.scrollTo(0, 0);
     });
   }
+}
+
+var navClickBound = false;
+function bindNavClicks(){
+  if(navClickBound) return;
+  navClickBound = true;
+  document.addEventListener('click', function(e){
+    if(e.defaultPrevented || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    var a = e.target.closest('a');
+    if(!isInternalLink(a)) return;
+    e.preventDefault();
+    navigateTo(a.getAttribute('href'));
+  });
 }
 
 function bindChrome(){
@@ -1669,7 +1734,7 @@ function bindKontakt(){
     clear.addEventListener('click', function(){
       var b = document.getElementById('preBox');
       if(b) b.remove();
-      location.hash = '#/kontakt';
+      navigateTo('/kontakt');
     });
   }
   var f = document.getElementById('kontaktForm');
@@ -1748,7 +1813,7 @@ function cookieBanner(){
   el.className = 'cookie';
   el.innerHTML = '<p><strong>Cookies und Statistik.</strong> Diese Website funktioniert ohne Tracking. '
     + 'Analysewerkzeuge laden wir nur, wenn Sie zustimmen. Mehr dazu in der '
-    + '<a href="#/datenschutz" style="color:var(--glow)">Datenschutzerklärung</a>.</p>'
+    + '<a href="/datenschutz" style="color:var(--glow)">Datenschutzerklärung</a>.</p>'
     + '<div class="row">'
     + '<button class="btn btn-glow btn-sm" data-c="all">Alle zulassen</button>'
     + '<button class="btn btn-ghost btn-sm" data-c="min">Nur notwendige</button>'
@@ -1772,8 +1837,10 @@ function boot(){
   }
   if(gsapReady) document.body.classList.add('js-anim');
 
+  injectLocalBusinessSchema();
+  bindNavClicks();
   render();
-  window.addEventListener('hashchange', render);
+  window.addEventListener('popstate', render);
   cookieBanner();
 }
 
